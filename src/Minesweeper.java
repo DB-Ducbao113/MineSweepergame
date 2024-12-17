@@ -2,8 +2,15 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import javax.swing.JOptionPane;
+import java.util.LinkedList;
 
 public class Minesweeper {
+    private LinkedList<MineField> undoQueue = new LinkedList<>();
+
+    private int undoCount = 0;
+    private final int MAX_UNDO = 3;
+
     private JFrame frame;
     private JLabel textLabel;
     private JPanel textPanel;
@@ -41,6 +48,11 @@ public class Minesweeper {
         controlPanel.add(new JLabel("Mines:"));
         controlPanel.add(mineInput);
         controlPanel.add(restartButton);
+
+        JButton undoButton = new JButton("Undo");
+        undoButton.addActionListener(e -> undoMove());
+        controlPanel.add(undoButton);
+
         frame.add(controlPanel, BorderLayout.SOUTH);
 
         boardPanel = new JPanel(new GridLayout(numRows, numCols));
@@ -71,8 +83,17 @@ public class Minesweeper {
         mineField.setMines();
     }
 
+    private void saveState() {
+        undoQueue.addLast(mineField.clone()); // Save current state
+    }
+
+
+
+
     private void handleLeftClick(MineTile tile) {
-        if (!tile.isEnabled()) return;
+        if (!tile.isEnabled() || gameControl.isGameOver()) return;
+
+        saveState();
 
         if (mineField.isMine(tile.r, tile.c)) {
             revealMines();
@@ -82,12 +103,70 @@ public class Minesweeper {
     }
 
     private void handleRightClick(MineTile tile) {
+        if (gameControl.isGameOver()) return;
+
+        saveState();
+
         if (tile.getText().equals("") && tile.isEnabled()) {
             tile.setText("🚩");
         } else if (tile.getText().equals("🚩")) {
             tile.setText("");
         }
     }
+
+
+    private void undoMove() {
+        if (undoCount >= MAX_UNDO) {
+            JOptionPane.showMessageDialog(frame,
+                    "You have used all 3 undo turns!",
+                    "Undo Limit Reached",
+                    JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        if (undoQueue.isEmpty()) {
+            JOptionPane.showMessageDialog(frame,
+                    "No more moves to undo!",
+                    "Undo Error",
+                    JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        // Perform Undo
+        undoCount++; // Increment undo count
+        mineField = undoQueue.removeLast(); // Restore last saved state
+        restoreBoardState();
+    }
+
+
+
+
+
+    private void restoreBoardState() {
+        boardPanel.removeAll();
+        for (int r = 0; r < numRows; r++) {
+            for (int c = 0; c < numCols; c++) {
+                MineTile tile = mineField.getBoard()[r][c];
+                tile.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mousePressed(MouseEvent e) {
+                        if (gameControl.isGameOver()) return;
+
+                        if (e.getButton() == MouseEvent.BUTTON1) {
+                            handleLeftClick(tile);
+                        } else if (e.getButton() == MouseEvent.BUTTON3) {
+                            handleRightClick(tile);
+                        }
+                    }
+                });
+                boardPanel.add(tile);
+            }
+        }
+        boardPanel.revalidate();
+        boardPanel.repaint();
+    }
+
+
 
     private void revealMines() {
         for (MineTile mine : mineField.getMineList()) {
@@ -171,6 +250,9 @@ public class Minesweeper {
         mineField = new MineField(numRows, numCols, mineCount);
         mineField.initializeBoard();
         mineField.setMines();
+
+        undoQueue.clear();
+        undoCount = 0;
 
         boardPanel.removeAll();
         for (int r = 0; r < numRows; r++) {

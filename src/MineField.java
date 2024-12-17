@@ -1,7 +1,7 @@
 import java.util.ArrayList;
 import java.util.Random;
 
-public class MineField {
+public class MineField implements Cloneable {
     private MineTile[][] board;
     private ArrayList<MineTile> mineList;
     private int numRows, numCols, mineCount;
@@ -49,5 +49,27 @@ public class MineField {
 
     public ArrayList<MineTile> getMineList() {
         return mineList;
+    }
+
+    @Override
+    public MineField clone() {
+        try {
+            MineField cloned = (MineField) super.clone();
+            cloned.board = new MineTile[numRows][numCols];
+            cloned.mineList = new ArrayList<>();
+
+            // Clone each MineTile
+            for (int r = 0; r < numRows; r++) {
+                for (int c = 0; c < numCols; c++) {
+                    cloned.board[r][c] = new MineTile(r, c);
+                    if (this.mineList.contains(this.board[r][c])) {
+                        cloned.mineList.add(cloned.board[r][c]);
+                    }
+                }
+            }
+            return cloned;
+        } catch (CloneNotSupportedException e) {
+            throw new RuntimeException("Clone not supported", e);
+        }
     }
 }
