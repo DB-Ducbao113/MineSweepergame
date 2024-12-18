@@ -58,12 +58,16 @@ public class MineField implements Cloneable {
             cloned.board = new MineTile[numRows][numCols];
             cloned.mineList = new ArrayList<>();
 
-            // Clone each MineTile
             for (int r = 0; r < numRows; r++) {
                 for (int c = 0; c < numCols; c++) {
-                    cloned.board[r][c] = new MineTile(r, c);
-                    if (this.mineList.contains(this.board[r][c])) {
-                        cloned.mineList.add(cloned.board[r][c]);
+                    MineTile originalTile = this.board[r][c];
+                    MineTile clonedTile = new MineTile(originalTile.r, originalTile.c);
+                    clonedTile.setText(originalTile.getText());
+                    clonedTile.setEnabled(originalTile.isEnabled());
+                    cloned.board[r][c] = clonedTile;
+
+                    if (this.mineList.contains(originalTile)) {
+                        cloned.mineList.add(clonedTile);
                     }
                 }
             }
@@ -72,4 +76,5 @@ public class MineField implements Cloneable {
             throw new RuntimeException("Clone not supported", e);
         }
     }
+
 }

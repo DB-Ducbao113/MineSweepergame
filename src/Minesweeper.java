@@ -84,11 +84,11 @@ public class Minesweeper {
     }
 
     private void saveState() {
-        undoQueue.addLast(mineField.clone()); // Save current state
+        if (undoQueue.size() == MAX_UNDO) {
+            undoQueue.removeFirst();
+        }
+        undoQueue.addLast(mineField.clone());
     }
-
-
-
 
     private void handleLeftClick(MineTile tile) {
         if (!tile.isEnabled() || gameControl.isGameOver()) return;
@@ -118,28 +118,24 @@ public class Minesweeper {
     private void undoMove() {
         if (undoCount >= MAX_UNDO) {
             JOptionPane.showMessageDialog(frame,
-                    "You have used all 3 undo turns!",
-                    "Undo Limit Reached",
+                    "You have used all " + MAX_UNDO + " Undo turns!",
+                    "Undo Limit",
                     JOptionPane.INFORMATION_MESSAGE);
             return;
         }
 
         if (undoQueue.isEmpty()) {
             JOptionPane.showMessageDialog(frame,
-                    "No more moves to undo!",
-                    "Undo Error",
+                    "No more undo turns left!",
+                    "Undo Limit",
                     JOptionPane.INFORMATION_MESSAGE);
             return;
         }
 
-        // Perform Undo
-        undoCount++; // Increment undo count
-        mineField = undoQueue.removeLast(); // Restore last saved state
+        mineField = undoQueue.removeLast();
+        undoCount++;
         restoreBoardState();
     }
-
-
-
 
 
     private void restoreBoardState() {
@@ -147,6 +143,24 @@ public class Minesweeper {
         for (int r = 0; r < numRows; r++) {
             for (int c = 0; c < numCols; c++) {
                 MineTile tile = mineField.getBoard()[r][c];
+
+                if (!tile.isEnabled()) {
+                    tile.setEnabled(false);
+                    int minesFound = countSurroundingMines(r, c);
+                    if (mineField.isMine(r, c)) {
+                        tile.setText("💣");
+                    } else if (minesFound > 0) {
+                        tile.setText(String.valueOf(minesFound));
+                    }
+                } else {
+                    tile.setEnabled(true); // Ô chưa mở
+                    if (tile.getText().equals("🚩")) {
+                        tile.setText("🚩"); // Cờ đã đặt
+                    } else {
+                        tile.setText(""); // Trống
+                    }
+                }
+
                 tile.addMouseListener(new MouseAdapter() {
                     @Override
                     public void mousePressed(MouseEvent e) {
@@ -159,6 +173,7 @@ public class Minesweeper {
                         }
                     }
                 });
+
                 boardPanel.add(tile);
             }
         }
@@ -273,9 +288,11 @@ public class Minesweeper {
                 boardPanel.add(tile);
             }
         }
+
         boardPanel.revalidate();
         boardPanel.repaint();
     }
+
 
 
     public static void main(String[] args) {
