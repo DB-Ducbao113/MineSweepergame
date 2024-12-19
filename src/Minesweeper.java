@@ -134,6 +134,7 @@ public class Minesweeper {
 
         mineField = undoQueue.removeLast();
         undoCount++;
+        gameControl.setGameOver(false);
         restoreBoardState();
     }
 
@@ -153,11 +154,11 @@ public class Minesweeper {
                         tile.setText(String.valueOf(minesFound));
                     }
                 } else {
-                    tile.setEnabled(true); // Ô chưa mở
+                    tile.setEnabled(true);
                     if (tile.getText().equals("🚩")) {
-                        tile.setText("🚩"); // Cờ đã đặt
+                        tile.setText("🚩");
                     } else {
-                        tile.setText(""); // Trống
+                        tile.setText("");
                     }
                 }
 
